@@ -32,50 +32,68 @@ api.interceptors.response.use(
 );
 
 export const authService = {
-  login: (username: string, password: string) =>
-    api.post('/auth/login', { username, password }),
-  register: (data: any) => api.post('/auth/register', data),
+  login: (username: string, password: string): Promise<any> =>
+    api.post('/auth/login', { username, password }) as any,
+  register: (data: any): Promise<any> =>
+    api.post('/auth/register', data) as any,
 };
 
 export const itemService = {
-  getAll: () => api.get('/items'),
-  getByCode: (code: string) => api.get(`/items/code/${code}`),
-  create: (data: any) => api.post('/items', data),
-  update: (id: number, data: any) => api.put(`/items/${id}`, data),
-  delete: (id: number) => api.delete(`/items/${id}`),
+  getAll: (): Promise<any[]> => api.get('/items') as any,
+  getByCode: (code: string): Promise<any> =>
+    api.get(`/items/code/${code}`) as any,
+  create: (data: any): Promise<any> =>
+    api.post('/items', data) as any,
+  update: (id: number, data: any): Promise<any> =>
+    api.put(`/items/${id}`, data) as any,
+  delete: (id: number): Promise<any> =>
+    api.delete(`/items/${id}`) as any,
 };
 
 export const locationService = {
-  getAll: () => api.get('/location'),
-  getByCode: (code: string) => api.get(`/location/code/${code}`),
-  create: (data: any) => api.post('/location', data),
-  update: (id: number, data: any) => api.put(`/location/${id}`, data),
-  delete: (id: number) => api.delete(`/location/${id}`),
+  getAll: (): Promise<any[]> => api.get('/location') as any,
+  getByCode: (code: string): Promise<any> =>
+    api.get(`/location/code/${code}`) as any,
+  create: (data: any): Promise<any> =>
+    api.post('/location', data) as any,
+  update: (id: number, data: any): Promise<any> =>
+    api.put(`/location/${id}`, data) as any,
+  delete: (id: number): Promise<any> =>
+    api.delete(`/location/${id}`) as any,
 };
 
 export const stockService = {
-  getAll: () => api.get('/stock'),
-  getLowStock: () => api.get('/stock/low-stock'),
-  stockIn: (data: any) => api.post('/stock/in', data),
-  stockOut: (data: any) => api.post('/stock/out', data),
-  stockInScan: (data: any) => api.post('/stock/in/scan', data),
-  stockOutScan: (data: any) => api.post('/stock/out/scan', data),
+  getAll: (): Promise<any[]> => api.get('/stock') as any,
+  getLowStock: (): Promise<any[]> => api.get('/stock/low-stock') as any,
+  stockIn: (data: any): Promise<any> =>
+    api.post('/stock/in', data) as any,
+  stockOut: (data: any): Promise<any> =>
+    api.post('/stock/out', data) as any,
+  stockInScan: (data: any): Promise<any> =>
+    api.post('/stock/in/scan', data) as any,
+  stockOutScan: (data: any): Promise<any> =>
+    api.post('/stock/out/scan', data) as any,
 };
 
 export const borrowService = {
-  getAll: () => api.get('/borrow'),
-  borrow: (data: any) => api.post('/borrow/borrow', data),
-  return: (data: any) => api.post('/borrow/return', data),
-  borrowScan: (data: any) => api.post('/borrow/borrow/scan', data),
+  getAll: (): Promise<any[]> => api.get('/borrow') as any,
+  borrow: (data: any): Promise<any> =>
+    api.post('/borrow/borrow', data) as any,
+  return: (data: any): Promise<any> =>
+    api.post('/borrow/return', data) as any,
+  borrowScan: (data: any): Promise<any> =>
+    api.post('/borrow/borrow/scan', data) as any,
 };
 
 export const flowService = {
-  getAll: (params?: any) => api.get('/flow', { params }),
-  getByItem: (itemId: number) => api.get(`/flow/item/${itemId}`),
+  getAll: (params?: any): Promise<any[]> =>
+    api.get('/flow', { params }) as any,
+  getByItem: (itemId: number): Promise<any[]> =>
+    api.get(`/flow/item/${itemId}`) as any,
 };
 
 export const userService = {
-  getAll: () => api.get('/users'),
+  getAll: (): Promise<any[]> => api.get('/users') as any,
 };
 
 export default api;

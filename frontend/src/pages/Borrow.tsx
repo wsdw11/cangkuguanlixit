@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, Select, DatePicker, message, Space, Tag, Card } from 'antd';
-import { SwapOutlined, ScanOutlined, CheckOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, InputNumber, Select, DatePicker, message, Space, Tag } from 'antd';
+import { SwapOutlined, ScanOutlined } from '@ant-design/icons';
 import { borrowService, itemService, locationService, userService } from '../services/api';
 import dayjs from 'dayjs';
 import type { ColumnsType } from 'antd/es/table';
