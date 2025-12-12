@@ -1,5 +1,13 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Layout as AntLayout, Menu, Avatar, Dropdown, Space } from 'antd';
+import {
+  Layout as AntLayout,
+  Menu,
+  Avatar,
+  Dropdown,
+  Space,
+  Button,
+  Grid,
+} from 'antd';
 import {
   DashboardOutlined,
   AppstoreOutlined,
@@ -10,9 +18,12 @@ import {
   FileTextOutlined,
   UserOutlined,
   LogoutOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import type { MenuProps } from 'antd';
+import { useMemo, useState } from 'react';
 
 const { Header, Sider, Content } = AntLayout;
 
@@ -68,9 +79,13 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const screens = Grid.useBreakpoint();
+  const isMobile = useMemo(() => !screens.md, [screens]);
+  const [collapsed, setCollapsed] = useState(true);
 
   const handleMenuClick = ({ key }: { key: string }) => {
     navigate(key);
+    if (isMobile) setCollapsed(true);
   };
 
   const userMenuItems: MenuProps['items'] = [
@@ -87,8 +102,34 @@ export default function Layout() {
 
   return (
     <AntLayout style={{ minHeight: '100vh' }}>
-      <Sider theme="dark" width={200}>
-        <div style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 18, fontWeight: 'bold' }}>
+      <Sider
+        theme="dark"
+        width={200}
+        collapsible
+        collapsed={isMobile ? collapsed : false}
+        collapsedWidth={isMobile ? 0 : 80}
+        breakpoint="md"
+        onBreakpoint={(broken) => {
+          if (broken) setCollapsed(true);
+        }}
+        onCollapse={(value) => setCollapsed(value)}
+        style={{
+          position: isMobile ? 'fixed' : 'relative',
+          zIndex: 1000,
+          height: '100vh',
+        }}
+      >
+        <div
+          style={{
+            height: 64,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontSize: 18,
+            fontWeight: 'bold',
+          }}
+        >
           仓库管理系统
         </div>
         <Menu
@@ -99,8 +140,33 @@ export default function Layout() {
           onClick={handleMenuClick}
         />
       </Sider>
-      <AntLayout>
-        <Header style={{ background: '#fff', padding: '0 24px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+      <AntLayout
+        style={{
+          marginLeft: isMobile ? 0 : 200,
+          transition: 'margin-left 0.2s ease',
+        }}
+      >
+        <Header
+          style={{
+            background: '#fff',
+            padding: '0 16px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            position: isMobile ? 'sticky' : 'relative',
+            top: 0,
+            zIndex: 999,
+          }}
+        >
+          {isMobile ? (
+            <Button
+              type="text"
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => setCollapsed(!collapsed)}
+            />
+          ) : (
+            <div />
+          )}
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
             <Space style={{ cursor: 'pointer' }}>
               <Avatar icon={<UserOutlined />} />
@@ -108,7 +174,14 @@ export default function Layout() {
             </Space>
           </Dropdown>
         </Header>
-        <Content style={{ margin: '24px', background: '#fff', padding: 24, minHeight: 280 }}>
+        <Content
+          style={{
+            margin: isMobile ? '12px' : '24px',
+            background: '#fff',
+            padding: isMobile ? 12 : 24,
+            minHeight: 280,
+          }}
+        >
           <Outlet />
         </Content>
       </AntLayout>
