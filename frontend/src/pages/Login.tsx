@@ -14,9 +14,24 @@ export default function Login() {
     try {
       await login(values.username, values.password);
       message.success('登录成功');
-      navigate('/dashboard');
+      // 等待一小段时间确保状态更新完成
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 100);
     } catch (error: any) {
-      message.error(error.response?.data?.error || '登录失败');
+      // 处理不同的错误格式
+      let errorMessage = '登录失败';
+      if (error.response?.data) {
+        if (error.response.data.error) {
+          errorMessage = error.response.data.error;
+        } else if (error.response.data.errors && Array.isArray(error.response.data.errors)) {
+          errorMessage = error.response.data.errors[0]?.msg || errorMessage;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      message.error(errorMessage);
+      console.error('登录错误:', error);
     } finally {
       setLoading(false);
     }
@@ -47,7 +62,7 @@ export default function Login() {
           </Form.Item>
         </Form>
         <div style={{ textAlign: 'center', color: '#999', fontSize: 12 }}>
-          默认账号: admin / admin123
+          默认账号: warehouse / admin123
         </div>
       </Card>
     </div>

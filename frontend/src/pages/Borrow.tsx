@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, Select, DatePicker, message, Space, Tag, Card } from 'antd';
-import { SwapOutlined, ScanOutlined, CheckOutlined } from '@ant-design/icons';
-import { borrowService, itemService, locationService, userService } from '../services/api';
+import { Table, Button, Modal, Form, Input, InputNumber, Select, DatePicker, message, Space, Tag, Upload } from 'antd';
+import { SwapOutlined, ScanOutlined, UploadOutlined, CameraOutlined } from '@ant-design/icons';
+import { borrowService, itemService, locationService, userService, uploadService } from '../services/api';
+import CameraScanner from '../components/CameraScanner';
 import dayjs from 'dayjs';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -30,6 +31,9 @@ export default function Borrow() {
   const [locations, setLocations] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [scanMode, setScanMode] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [scanModalOpen, setScanModalOpen] = useState(false);
+  const [scanTarget, setScanTarget] = useState<'item_code' | 'location_code'>('item_code');
 
   useEffect(() => {
     loadData();
@@ -75,6 +79,7 @@ export default function Borrow() {
           borrower_id: values.borrower_id,
           expected_return_date: values.expected_return_date?.format('YYYY-MM-DD'),
           remark: values.remark,
+          photo_url: values.photo_url,
         });
       } else {
         await borrowService.borrow({
@@ -84,6 +89,7 @@ export default function Borrow() {
           borrower_id: values.borrower_id,
           expected_return_date: values.expected_return_date?.format('YYYY-MM-DD'),
           remark: values.remark,
+          photo_url: values.photo_url,
         });
       }
       message.success('借出成功');
@@ -99,6 +105,7 @@ export default function Borrow() {
       await borrowService.return({
         record_id: values.record_id,
         remark: values.remark,
+        photo_url: values.photo_url,
       });
       message.success('归还成功');
       setReturnModalVisible(false);
@@ -112,12 +119,12 @@ export default function Borrow() {
     {
       title: '物品',
       key: 'item',
-      render: (_, record) => `${record.item_code} - ${record.item_name}`,
+      render: (_: any, record: BorrowRecord) => `${record.item_code} - ${record.item_name}`,
     },
     {
       title: '位置',
       key: 'location',
-      render: (_, record) => `${record.location_code} - ${record.location_name}`,
+      render: (_: any, record: BorrowRecord) => `${record.location_code} - ${record.location_name}`,
     },
     {
       title: '数量',
@@ -133,13 +140,13 @@ export default function Borrow() {
       title: '类型',
       dataIndex: 'type',
       key: 'type',
-      render: (type) => (type === 'borrow' ? '借出' : '归还'),
+      render: (type: string) => (type === 'borrow' ? '借出' : '归还'),
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      render: (status) => {
+      render: (status: string) => {
         const statusMap: any = {
           borrowed: { text: '已借出', color: 'orange' },
           returned: { text: '已归还', color: 'green' },
@@ -153,18 +160,18 @@ export default function Borrow() {
       title: '借出日期',
       dataIndex: 'borrow_date',
       key: 'borrow_date',
-      render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '-',
+      render: (date: string) => date ? dayjs(date).format('YYYY-MM-DD') : '-',
     },
     {
       title: '预计归还',
       dataIndex: 'expected_return_date',
       key: 'expected_return_date',
-      render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '-',
+      render: (date: string) => date ? dayjs(date).format('YYYY-MM-DD') : '-',
     },
     {
       title: '操作',
       key: 'action',
-      render: (_, record) => (
+      render: (_: any, record: BorrowRecord) => (
         record.type === 'borrow' && record.status === 'borrowed' ? (
           <Button type="link" onClick={() => handleReturn(record)}>
             归还
@@ -200,6 +207,7 @@ export default function Borrow() {
         loading={loading}
         rowKey="id"
         pagination={{ pageSize: 20 }}
+        scroll={{ x: 900 }}
       />
 
       <Modal
@@ -217,14 +225,38 @@ export default function Borrow() {
                 label="物品编码（扫码）"
                 rules={[{ required: true }]}
               >
-                <Input placeholder="扫描物品编码" />
+                <Input
+                  placeholder="扫描物品编码（扫码枪或摄像头）"
+                  addonAfter={
+                    <Button
+                      type="link"
+                      icon={<CameraOutlined />}
+                      onClick={() => {
+                        setScanTarget('item_code');
+                        setScanModalOpen(true);
+                      }}
+                    />
+                  }
+                />
               </Form.Item>
               <Form.Item
                 name="location_code"
                 label="位置编码（扫码）"
                 rules={[{ required: true }]}
               >
-                <Input placeholder="扫描位置编码" />
+                <Input
+                  placeholder="扫描位置编码（扫码枪或摄像头）"
+                  addonAfter={
+                    <Button
+                      type="link"
+                      icon={<CameraOutlined />}
+                      onClick={() => {
+                        setScanTarget('location_code');
+                        setScanModalOpen(true);
+                      }}
+                    />
+                  }
+                />
               </Form.Item>
             </>
           ) : (
@@ -232,7 +264,7 @@ export default function Borrow() {
               <Form.Item name="item_id" label="物品" rules={[{ required: true }]}>
                 <Select
                   showSearch
-                  options={items.map((item) => ({
+                options={items.map((item: any) => ({
                     value: item.id,
                     label: `${item.code} - ${item.name}`,
                   }))}
@@ -241,7 +273,7 @@ export default function Borrow() {
               <Form.Item name="location_id" label="位置" rules={[{ required: true }]}>
                 <Select
                   showSearch
-                  options={locations.map((loc) => ({
+                options={locations.map((loc: any) => ({
                     value: loc.id,
                     label: `${loc.code} - ${loc.name}`,
                   }))}
@@ -255,7 +287,7 @@ export default function Borrow() {
           <Form.Item name="borrower_id" label="借用人" rules={[{ required: true }]}>
             <Select
               showSearch
-              options={users.map((user) => ({
+              options={users.map((user: any) => ({
                 value: user.id,
                 label: `${user.name} (${user.username})`,
               }))}
@@ -266,6 +298,32 @@ export default function Borrow() {
           </Form.Item>
           <Form.Item name="remark" label="备注">
             <Input.TextArea rows={3} />
+          </Form.Item>
+          <Form.Item name="photo_url" label="照片（可选，借出拍照留存）">
+            <Upload
+              accept="image/*"
+              showUploadList={false}
+              beforeUpload={async (file: File) => {
+                setUploading(true);
+                try {
+                  const res = await uploadService.uploadImage(file as File);
+                  form.setFieldsValue({ photo_url: res.url });
+                  message.success('上传成功');
+                } catch (error: any) {
+                  message.error(error.response?.data?.error || '上传失败');
+                } finally {
+                  setUploading(false);
+                }
+                return false;
+              }}
+            >
+              <Button icon={<UploadOutlined />} loading={uploading}>上传/拍照</Button>
+            </Upload>
+            {form.getFieldValue('photo_url') && (
+              <div style={{ marginTop: 8 }}>
+                <img src={form.getFieldValue('photo_url')} alt="preview" style={{ width: 120 }} />
+              </div>
+            )}
           </Form.Item>
         </Form>
       </Modal>
@@ -283,8 +341,47 @@ export default function Borrow() {
           <Form.Item name="remark" label="备注">
             <Input.TextArea rows={3} />
           </Form.Item>
+          <Form.Item name="photo_url" label="归还照片（可选）">
+            <Upload
+              accept="image/*"
+              showUploadList={false}
+              beforeUpload={async (file: File) => {
+                setUploading(true);
+                try {
+                  const res = await uploadService.uploadImage(file as File);
+                  form.setFieldsValue({ photo_url: res.url });
+                  message.success('上传成功');
+                } catch (error: any) {
+                  message.error(error.response?.data?.error || '上传失败');
+                } finally {
+                  setUploading(false);
+                }
+                return false;
+              }}
+            >
+              <Button icon={<UploadOutlined />} loading={uploading}>上传/拍照</Button>
+            </Upload>
+            {form.getFieldValue('photo_url') && (
+              <div style={{ marginTop: 8 }}>
+                <img src={form.getFieldValue('photo_url')} alt="preview" style={{ width: 120 }} />
+              </div>
+            )}
+          </Form.Item>
         </Form>
       </Modal>
+
+      <CameraScanner
+        visible={scanModalOpen}
+        onClose={() => setScanModalOpen(false)}
+        title={scanTarget === 'item_code' ? '扫描物品编码' : '扫描位置编码'}
+        onResult={(text) => {
+          if (scanTarget === 'item_code') {
+            form.setFieldsValue({ item_code: text });
+          } else {
+            form.setFieldsValue({ location_code: text });
+          }
+        }}
+      />
     </div>
   );
 }

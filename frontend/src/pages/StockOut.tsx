@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Form, Input, InputNumber, Select, Button, message, Card, Space, Tag } from 'antd';
-import { ScanOutlined, CheckOutlined } from '@ant-design/icons';
-import { stockService, itemService, locationService, userService } from '../services/api';
+import { Form, Input, InputNumber, Select, Button, message, Card, Space, Tag, DatePicker, Upload } from 'antd';
+import { ScanOutlined, CheckOutlined, UploadOutlined, CameraOutlined } from '@ant-design/icons';
+import { stockService, itemService, locationService, userService, uploadService } from '../services/api';
+import CameraScanner from '../components/CameraScanner';
 
 export default function StockOut() {
   const [form] = Form.useForm();
@@ -10,6 +11,9 @@ export default function StockOut() {
   const [items, setItems] = useState<any[]>([]);
   const [locations, setLocations] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [scanModalOpen, setScanModalOpen] = useState(false);
+  const [scanTarget, setScanTarget] = useState<'item_code' | 'location_code'>('item_code');
 
   useEffect(() => {
     loadOptions();
@@ -52,6 +56,7 @@ export default function StockOut() {
 
   const handleSubmit = async (values: any) => {
     setLoading(true);
+    const businessDate = values.business_date ? values.business_date.format('YYYY-MM-DD') : undefined;
     try {
       if (scanMode && values.item_code && values.location_code) {
         // 扫码模式
@@ -60,8 +65,15 @@ export default function StockOut() {
           location_code: values.location_code,
           quantity: values.quantity,
           recipient_id: values.recipient_id,
+          recipient_name: values.recipient_name,
           purpose: values.purpose,
           remark: values.remark,
+          business_date: businessDate,
+          brand: values.brand,
+          model: values.model,
+          spec: values.spec,
+          serial_no: values.serial_no,
+          photo_url: values.photo_url,
         });
       } else {
         // 普通模式
@@ -70,8 +82,15 @@ export default function StockOut() {
           location_id: values.location_id,
           quantity: values.quantity,
           recipient_id: values.recipient_id,
+          recipient_name: values.recipient_name,
           purpose: values.purpose,
           remark: values.remark,
+          business_date: businessDate,
+          brand: values.brand,
+          model: values.model,
+          spec: values.spec,
+          serial_no: values.serial_no,
+          photo_url: values.photo_url,
         });
       }
       message.success('出库成功');
@@ -81,6 +100,20 @@ export default function StockOut() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleUpload = async ({ file }: any) => {
+    setUploading(true);
+    try {
+      const res = await uploadService.uploadImage(file as File);
+      form.setFieldsValue({ photo_url: res.url });
+      message.success('上传成功');
+    } catch (error: any) {
+      message.error(error.response?.data?.error || '上传失败');
+    } finally {
+      setUploading(false);
+    }
+    return false;
   };
 
   return (
@@ -113,8 +146,18 @@ export default function StockOut() {
                 rules={[{ required: true, message: '请扫描或输入物品编码' }]}
               >
                 <Input
-                  placeholder="使用扫码枪扫描物品编码"
+                  placeholder="使用扫码枪或摄像头扫描物品编码"
                   onPressEnter={(e: any) => handleScanItem(e.target.value)}
+                  addonAfter={
+                    <Button
+                      type="link"
+                      icon={<CameraOutlined />}
+                      onClick={() => {
+                        setScanTarget('item_code');
+                        setScanModalOpen(true);
+                      }}
+                    />
+                  }
                 />
               </Form.Item>
               <Form.Item
@@ -123,8 +166,18 @@ export default function StockOut() {
                 rules={[{ required: true, message: '请扫描或输入位置编码' }]}
               >
                 <Input
-                  placeholder="使用扫码枪扫描位置编码"
+                  placeholder="使用扫码枪或摄像头扫描位置编码"
                   onPressEnter={(e: any) => handleScanLocation(e.target.value)}
+                  addonAfter={
+                    <Button
+                      type="link"
+                      icon={<CameraOutlined />}
+                      onClick={() => {
+                        setScanTarget('location_code');
+                        setScanModalOpen(true);
+                      }}
+                    />
+                  }
                 />
               </Form.Item>
             </>
@@ -177,10 +230,31 @@ export default function StockOut() {
             <InputNumber min={1} style={{ width: '100%' }} placeholder="出库数量" />
           </Form.Item>
 
-          <Form.Item name="recipient_id" label="领用人">
+          <Form.Item name="brand" label="品牌">
+            <Input placeholder="品牌（可选）" />
+          </Form.Item>
+          <Form.Item name="model" label="型号">
+            <Input placeholder="型号（可选）" />
+          </Form.Item>
+          <Form.Item name="spec" label="规格">
+            <Input placeholder="规格（可选）" />
+          </Form.Item>
+          <Form.Item name="serial_no" label="序列号/SN">
+            <Input placeholder="序列号（可选）" />
+          </Form.Item>
+
+          <Form.Item
+            name="recipient_name"
+            label="领用人姓名"
+            rules={[{ required: true, message: '请输入领用人姓名' }]}
+          >
+            <Input placeholder="请输入领用人姓名，如张师傅" />
+          </Form.Item>
+
+          <Form.Item name="recipient_id" label="关联系统用户（可选）">
             <Select
               showSearch
-              placeholder="选择领用人（可选）"
+              placeholder="选择系统用户（可选）"
               optionFilterProp="children"
               allowClear
               options={users.map((user) => ({
@@ -198,6 +272,25 @@ export default function StockOut() {
             <Input.TextArea rows={3} placeholder="备注信息（可选）" />
           </Form.Item>
 
+          <Form.Item name="business_date" label="出库日期">
+            <DatePicker style={{ width: '100%' }} placeholder="不选则默认为今天" />
+          </Form.Item>
+
+          <Form.Item name="photo_url" label="照片">
+            <Upload
+              accept="image/*"
+              beforeUpload={(file) => handleUpload({ file })}
+              showUploadList={false}
+            >
+              <Button icon={<UploadOutlined />} loading={uploading}>上传/拍照</Button>
+            </Upload>
+            {form.getFieldValue('photo_url') && (
+              <div style={{ marginTop: 8 }}>
+                <img src={form.getFieldValue('photo_url')} alt="preview" style={{ width: 120 }} />
+              </div>
+            )}
+          </Form.Item>
+
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={loading} block size="large">
               确认出库
@@ -205,6 +298,20 @@ export default function StockOut() {
           </Form.Item>
         </Form>
       </Card>
+      <CameraScanner
+        visible={scanModalOpen}
+        onClose={() => setScanModalOpen(false)}
+        title={scanTarget === 'item_code' ? '扫描物品编码' : '扫描位置编码'}
+        onResult={(text) => {
+          if (scanTarget === 'item_code') {
+            form.setFieldsValue({ item_code: text });
+            handleScanItem(text);
+          } else {
+            form.setFieldsValue({ location_code: text });
+            handleScanLocation(text);
+          }
+        }}
+      />
     </div>
   );
 }

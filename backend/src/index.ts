@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import { initDatabase } from './database';
 import authRoutes from './routes/auth';
 import itemRoutes from './routes/items';
@@ -9,6 +10,9 @@ import borrowRoutes from './routes/borrow';
 import locationRoutes from './routes/location';
 import flowRoutes from './routes/flow';
 import userRoutes from './routes/users';
+import dashboardRoutes from './routes/dashboard';
+import categoryRoutes from './routes/categories';
+import uploadRoutes from './routes/upload';
 
 dotenv.config();
 
@@ -28,6 +32,12 @@ app.use('/api/borrow', borrowRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/flow', flowRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/upload', uploadRoutes);
+
+// 静态文件（图片上传）
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // 健康检查
 app.get('/api/health', (req, res) => {

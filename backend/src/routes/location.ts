@@ -1,9 +1,10 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
-import { authenticateToken, requireAdmin, AuthRequest } from '../middleware/auth';
+import { authenticateToken, requireRole, AuthRequest } from '../middleware/auth';
 import { dbGet, dbAll, dbRun } from '../database';
 
 const router = express.Router();
+const warehouseOnly = requireRole('warehouse');
 
 // 获取所有位置
 router.get('/', authenticateToken, async (req, res) => {
@@ -31,7 +32,7 @@ router.get('/code/:code', authenticateToken, async (req, res) => {
 // 创建位置
 router.post('/',
   authenticateToken,
-  requireAdmin,
+  warehouseOnly,
   [
     body('code').notEmpty().withMessage('位置编码不能为空'),
     body('name').notEmpty().withMessage('位置名称不能为空'),
@@ -69,7 +70,7 @@ router.post('/',
 // 更新位置
 router.put('/:id',
   authenticateToken,
-  requireAdmin,
+  warehouseOnly,
   async (req: AuthRequest, res) => {
     try {
       const { name, area, description } = req.body;
@@ -87,7 +88,7 @@ router.put('/:id',
 // 删除位置
 router.delete('/:id',
   authenticateToken,
-  requireAdmin,
+  warehouseOnly,
   async (req: AuthRequest, res) => {
     try {
       await dbRun('DELETE FROM locations WHERE id = ?', [req.params.id]);

@@ -12,6 +12,7 @@ router.post('/register',
     body('username').notEmpty().withMessage('用户名不能为空'),
     body('password').isLength({ min: 6 }).withMessage('密码至少6位'),
     body('name').notEmpty().withMessage('姓名不能为空'),
+    body('role').optional().isIn(['warehouse', 'receiver']).withMessage('角色不合法'),
   ],
   async (req, res) => {
     try {
@@ -20,7 +21,7 @@ router.post('/register',
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { username, password, name, role = 'user' } = req.body;
+      const { username, password, name, role = 'receiver' } = req.body;
 
       // 检查用户名是否已存在
       const existingUser = await dbGet('SELECT id FROM users WHERE username = ?', [username]);

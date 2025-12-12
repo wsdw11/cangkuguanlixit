@@ -25,10 +25,16 @@ export function authenticateToken(req: AuthRequest, res: Response, next: NextFun
   });
 }
 
-export function requireAdmin(req: AuthRequest, res: Response, next: NextFunction) {
-  if (req.userRole !== 'admin') {
-    return res.status(403).json({ error: '需要管理员权限' });
-  }
-  next();
+export function requireRole(roles: string | string[]) {
+  const roleList = Array.isArray(roles) ? roles : [roles];
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.userRole || !roleList.includes(req.userRole)) {
+      return res.status(403).json({ error: '权限不足' });
+    }
+    next();
+  };
 }
+
+// 兼容旧调用名
+export const requireAdmin = requireRole('warehouse');
 

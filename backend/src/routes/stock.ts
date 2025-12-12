@@ -1,9 +1,10 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
-import { authenticateToken, AuthRequest } from '../middleware/auth';
+import { authenticateToken, AuthRequest, requireRole } from '../middleware/auth';
 import { dbGet, dbAll, dbRun } from '../database';
 
 const router = express.Router();
+const warehouseOnly = requireRole('warehouse');
 
 // 获取库存列表
 router.get('/', authenticateToken, async (req, res) => {
@@ -13,7 +14,11 @@ router.get('/', authenticateToken, async (req, res) => {
         s.*,
         i.code as item_code,
         i.name as item_name,
+        i.category,
         i.unit,
+        i.brand,
+        i.model,
+        i.spec,
         i.min_stock,
         l.code as location_code,
         l.name as location_name,
@@ -37,7 +42,11 @@ router.get('/low-stock', authenticateToken, async (req, res) => {
         s.*,
         i.code as item_code,
         i.name as item_name,
+        i.category,
         i.unit,
+        i.brand,
+        i.model,
+        i.spec,
         i.min_stock,
         l.code as location_code,
         l.name as location_name,
@@ -57,6 +66,7 @@ router.get('/low-stock', authenticateToken, async (req, res) => {
 // 入库操作
 router.post('/in',
   authenticateToken,
+  warehouseOnly,
   [
     body('item_id').isInt().withMessage('物品ID必须为整数'),
     body('location_id').isInt().withMessage('位置ID必须为整数'),
@@ -69,8 +79,22 @@ router.post('/in',
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { item_id, location_id, quantity, supplier, batch_no, remark } = req.body;
+      const {
+        item_id,
+        location_id,
+        quantity,
+        supplier,
+        batch_no,
+        remark,
+        business_date,
+        brand,
+        model,
+        spec,
+        serial_no,
+        photo_url,
+      } = req.body;
       const operator_id = req.userId!;
+      const businessDate = business_date || new Date().toISOString().slice(0, 10);
 
       // 开始事务
       await dbRun('BEGIN TRANSACTION');
@@ -78,9 +102,23 @@ router.post('/in',
       try {
         // 插入入库记录
         const inResult = await dbRun(
-          `INSERT INTO stock_in (item_id, location_id, quantity, operator_id, supplier, batch_no, remark)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [item_id, location_id, quantity, operator_id, supplier || null, batch_no || null, remark || null]
+          `INSERT INTO stock_in (item_id, location_id, quantity, operator_id, supplier, batch_no, remark, business_date, brand, model, spec, serial_no, photo_url)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            item_id,
+            location_id,
+            quantity,
+            operator_id,
+            supplier || null,
+            batch_no || null,
+            remark || null,
+            businessDate,
+            brand || null,
+            model || null,
+            spec || null,
+            serial_no || null,
+            photo_url || null,
+          ]
         );
 
         // 更新库存
@@ -103,9 +141,9 @@ router.post('/in',
 
         // 记录流向
         await dbRun(
-          `INSERT INTO item_flow (item_id, to_location_id, quantity, operator_id, flow_type, related_record_id, remark)
-           VALUES (?, ?, ?, ?, 'in', ?, ?)`,
-          [item_id, location_id, quantity, operator_id, inResult.lastID, remark || null]
+          `INSERT INTO item_flow (item_id, to_location_id, quantity, operator_id, flow_type, related_record_id, remark, serial_no, photo_url)
+           VALUES (?, ?, ?, ?, 'in', ?, ?, ?, ?)`,
+          [item_id, location_id, quantity, operator_id, inResult.lastID, remark || null, serial_no || null, photo_url || null]
         );
 
         await dbRun('COMMIT');
@@ -123,6 +161,7 @@ router.post('/in',
 // 出库操作
 router.post('/out',
   authenticateToken,
+  warehouseOnly,
   [
     body('item_id').isInt().withMessage('物品ID必须为整数'),
     body('location_id').isInt().withMessage('位置ID必须为整数'),
@@ -135,8 +174,23 @@ router.post('/out',
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { item_id, location_id, quantity, recipient_id, purpose, remark } = req.body;
+      const {
+        item_id,
+        location_id,
+        quantity,
+        recipient_id,
+        recipient_name,
+        purpose,
+        remark,
+        business_date,
+        brand,
+        model,
+        spec,
+        serial_no,
+        photo_url,
+      } = req.body;
       const operator_id = req.userId!;
+      const businessDate = business_date || new Date().toISOString().slice(0, 10);
 
       // 检查库存是否充足
       const stock: any = await dbGet(
@@ -154,9 +208,24 @@ router.post('/out',
       try {
         // 插入出库记录
         const outResult = await dbRun(
-          `INSERT INTO stock_out (item_id, location_id, quantity, operator_id, recipient_id, purpose, remark)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [item_id, location_id, quantity, operator_id, recipient_id || null, purpose || null, remark || null]
+          `INSERT INTO stock_out (item_id, location_id, quantity, operator_id, recipient_id, recipient_name, purpose, remark, business_date, brand, model, spec, serial_no, photo_url)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            item_id,
+            location_id,
+            quantity,
+            operator_id,
+            recipient_id || null,
+            recipient_name || null,
+            purpose || null,
+            remark || null,
+            businessDate,
+            brand || null,
+            model || null,
+            spec || null,
+            serial_no || null,
+            photo_url || null,
+          ]
         );
 
         // 更新库存
@@ -167,9 +236,9 @@ router.post('/out',
 
         // 记录流向
         await dbRun(
-          `INSERT INTO item_flow (item_id, from_location_id, quantity, operator_id, flow_type, related_record_id, remark)
-           VALUES (?, ?, ?, ?, 'out', ?, ?)`,
-          [item_id, location_id, quantity, operator_id, outResult.lastID, remark || null]
+          `INSERT INTO item_flow (item_id, from_location_id, quantity, operator_id, flow_type, related_record_id, remark, serial_no, photo_url)
+           VALUES (?, ?, ?, ?, 'out', ?, ?, ?, ?)`,
+          [item_id, location_id, quantity, operator_id, outResult.lastID, remark || null, serial_no || null, photo_url || null]
         );
 
         await dbRun('COMMIT');
@@ -187,6 +256,7 @@ router.post('/out',
 // 扫码入库
 router.post('/in/scan',
   authenticateToken,
+  warehouseOnly,
   [
     body('item_code').notEmpty().withMessage('物品编码不能为空'),
     body('location_code').notEmpty().withMessage('位置编码不能为空'),
@@ -199,8 +269,22 @@ router.post('/in/scan',
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { item_code, location_code, quantity, supplier, batch_no, remark } = req.body;
+      const {
+        item_code,
+        location_code,
+        quantity,
+        supplier,
+        batch_no,
+        remark,
+        business_date,
+        brand,
+        model,
+        spec,
+        serial_no,
+        photo_url,
+      } = req.body;
       const operator_id = req.userId!;
+      const businessDate = business_date || new Date().toISOString().slice(0, 10);
 
       // 查找物品和位置
       const item: any = await dbGet('SELECT id FROM items WHERE code = ?', [item_code]);
@@ -219,9 +303,23 @@ router.post('/in/scan',
       try {
         // 插入入库记录
         const inResult = await dbRun(
-          `INSERT INTO stock_in (item_id, location_id, quantity, operator_id, supplier, batch_no, remark)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [item.id, location.id, quantity, operator_id, supplier || null, batch_no || null, remark || null]
+          `INSERT INTO stock_in (item_id, location_id, quantity, operator_id, supplier, batch_no, remark, business_date, brand, model, spec, serial_no, photo_url)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            item.id,
+            location.id,
+            quantity,
+            operator_id,
+            supplier || null,
+            batch_no || null,
+            remark || null,
+            businessDate,
+            brand || null,
+            model || null,
+            spec || null,
+            serial_no || null,
+            photo_url || null,
+          ]
         );
 
         // 更新库存
@@ -244,9 +342,9 @@ router.post('/in/scan',
 
         // 记录流向
         await dbRun(
-          `INSERT INTO item_flow (item_id, to_location_id, quantity, operator_id, flow_type, related_record_id, remark)
-           VALUES (?, ?, ?, ?, 'in', ?, ?)`,
-          [item.id, location.id, quantity, operator_id, inResult.lastID, remark || null]
+          `INSERT INTO item_flow (item_id, to_location_id, quantity, operator_id, flow_type, related_record_id, remark, serial_no, photo_url)
+           VALUES (?, ?, ?, ?, 'in', ?, ?, ?, ?)`,
+          [item.id, location.id, quantity, operator_id, inResult.lastID, remark || null, serial_no || null, photo_url || null]
         );
 
         await dbRun('COMMIT');
@@ -264,6 +362,7 @@ router.post('/in/scan',
 // 扫码出库
 router.post('/out/scan',
   authenticateToken,
+  warehouseOnly,
   [
     body('item_code').notEmpty().withMessage('物品编码不能为空'),
     body('location_code').notEmpty().withMessage('位置编码不能为空'),
@@ -276,8 +375,23 @@ router.post('/out/scan',
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { item_code, location_code, quantity, recipient_id, purpose, remark } = req.body;
+      const {
+        item_code,
+        location_code,
+        quantity,
+        recipient_id,
+        recipient_name,
+        purpose,
+        remark,
+        business_date,
+        brand,
+        model,
+        spec,
+        serial_no,
+        photo_url,
+      } = req.body;
       const operator_id = req.userId!;
+      const businessDate = business_date || new Date().toISOString().slice(0, 10);
 
       // 查找物品和位置
       const item: any = await dbGet('SELECT id FROM items WHERE code = ?', [item_code]);
@@ -306,9 +420,24 @@ router.post('/out/scan',
       try {
         // 插入出库记录
         const outResult = await dbRun(
-          `INSERT INTO stock_out (item_id, location_id, quantity, operator_id, recipient_id, purpose, remark)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [item.id, location.id, quantity, operator_id, recipient_id || null, purpose || null, remark || null]
+          `INSERT INTO stock_out (item_id, location_id, quantity, operator_id, recipient_id, recipient_name, purpose, remark, business_date, brand, model, spec, serial_no, photo_url)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            item.id,
+            location.id,
+            quantity,
+            operator_id,
+            recipient_id || null,
+            recipient_name || null,
+            purpose || null,
+            remark || null,
+            businessDate,
+            brand || null,
+            model || null,
+            spec || null,
+            serial_no || null,
+            photo_url || null,
+          ]
         );
 
         // 更新库存
@@ -319,9 +448,9 @@ router.post('/out/scan',
 
         // 记录流向
         await dbRun(
-          `INSERT INTO item_flow (item_id, from_location_id, quantity, operator_id, flow_type, related_record_id, remark)
-           VALUES (?, ?, ?, ?, 'out', ?, ?)`,
-          [item.id, location.id, quantity, operator_id, outResult.lastID, remark || null]
+          `INSERT INTO item_flow (item_id, from_location_id, quantity, operator_id, flow_type, related_record_id, remark, serial_no, photo_url)
+           VALUES (?, ?, ?, ?, 'out', ?, ?, ?, ?)`,
+          [item.id, location.id, quantity, operator_id, outResult.lastID, remark || null, serial_no || null, photo_url || null]
         );
 
         await dbRun('COMMIT');

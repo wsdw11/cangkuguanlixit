@@ -46,6 +46,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('user');
   };
 
+  // isAuthenticated 同时检查状态和 localStorage，确保登录后立即生效
+  const isAuthenticated = !!token || !!localStorage.getItem('token');
+
   return (
     <AuthContext.Provider
       value={{
@@ -53,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token,
         login,
         logout,
-        isAuthenticated: !!token,
+        isAuthenticated,
       }}
     >
       {children}

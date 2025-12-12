@@ -1,9 +1,10 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
-import { authenticateToken, AuthRequest } from '../middleware/auth';
+import { authenticateToken, AuthRequest, requireRole } from '../middleware/auth';
 import { dbGet, dbAll, dbRun } from '../database';
 
 const router = express.Router();
+const warehouseOrReceiver = requireRole(['warehouse', 'receiver']);
 
 // 获取所有借还记录
 router.get('/', authenticateToken, async (req, res) => {
@@ -36,6 +37,7 @@ router.get('/', authenticateToken, async (req, res) => {
 // 借出物品
 router.post('/borrow',
   authenticateToken,
+  warehouseOrReceiver,
   [
     body('item_id').isInt().withMessage('物品ID必须为整数'),
     body('location_id').isInt().withMessage('位置ID必须为整数'),
@@ -49,7 +51,7 @@ router.post('/borrow',
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { item_id, location_id, quantity, borrower_id, expected_return_date, remark } = req.body;
+      const { item_id, location_id, quantity, borrower_id, expected_return_date, remark, photo_url } = req.body;
       const operator_id = req.userId!;
 
       // 检查库存是否充足
@@ -69,9 +71,9 @@ router.post('/borrow',
         // 插入借出记录
         const borrowResult = await dbRun(
           `INSERT INTO borrow_records 
-           (item_id, location_id, quantity, borrower_id, operator_id, type, borrow_date, expected_return_date, status, remark)
-           VALUES (?, ?, ?, ?, ?, 'borrow', CURRENT_TIMESTAMP, ?, 'borrowed', ?)`,
-          [item_id, location_id, quantity, borrower_id, operator_id, expected_return_date || null, remark || null]
+           (item_id, location_id, quantity, borrower_id, operator_id, type, borrow_date, expected_return_date, status, remark, photo_url)
+           VALUES (?, ?, ?, ?, ?, 'borrow', CURRENT_TIMESTAMP, ?, 'borrowed', ?, ?)`,
+          [item_id, location_id, quantity, borrower_id, operator_id, expected_return_date || null, remark || null, photo_url || null]
         );
 
         // 更新库存
@@ -103,6 +105,7 @@ router.post('/borrow',
 // 归还物品
 router.post('/return',
   authenticateToken,
+  warehouseOrReceiver,
   [
     body('record_id').isInt().withMessage('借还记录ID必须为整数'),
   ],
@@ -113,7 +116,7 @@ router.post('/return',
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { record_id, remark } = req.body;
+      const { record_id, remark, photo_url } = req.body;
       const operator_id = req.userId!;
 
       // 查找借出记录
@@ -133,8 +136,8 @@ router.post('/return',
         // 插入归还记录
         const returnResult = await dbRun(
           `INSERT INTO borrow_records 
-           (item_id, location_id, quantity, borrower_id, operator_id, type, borrow_date, actual_return_date, status, remark)
-           VALUES (?, ?, ?, ?, ?, 'return', ?, CURRENT_TIMESTAMP, 'returned', ?)`,
+           (item_id, location_id, quantity, borrower_id, operator_id, type, borrow_date, actual_return_date, status, remark, photo_url)
+           VALUES (?, ?, ?, ?, ?, 'return', ?, CURRENT_TIMESTAMP, 'returned', ?, ?)`,
           [
             borrowRecord.item_id,
             borrowRecord.location_id,
@@ -142,7 +145,8 @@ router.post('/return',
             borrowRecord.borrower_id,
             operator_id,
             borrowRecord.borrow_date,
-            remark || null
+            remark || null,
+            photo_url || null
           ]
         );
 
@@ -193,6 +197,7 @@ router.post('/return',
 // 扫码借出
 router.post('/borrow/scan',
   authenticateToken,
+  warehouseOrReceiver,
   [
     body('item_code').notEmpty().withMessage('物品编码不能为空'),
     body('location_code').notEmpty().withMessage('位置编码不能为空'),
