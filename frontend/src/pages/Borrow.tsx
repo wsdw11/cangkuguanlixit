@@ -53,7 +53,9 @@ export default function Borrow() {
       setLocations(locationsData);
       setUsers(usersData);
     } catch (error: any) {
-      message.error('加载数据失败');
+      const errorMsg = error.response?.data?.error || error.message || '加载数据失败';
+      console.error('加载数据失败:', error);
+      message.error(errorMsg);
     } finally {
       setLoading(false);
     }

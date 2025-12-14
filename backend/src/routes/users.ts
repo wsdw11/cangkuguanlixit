@@ -11,9 +11,10 @@ router.get('/', authenticateToken, adminOrWarehouse, async (req: AuthRequest, re
     const users = await dbAll(
       'SELECT id, username, name, role, created_at FROM users ORDER BY created_at DESC'
     );
-    res.json(users);
+    res.json(users || []);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error('获取用户列表失败:', error);
+    res.status(500).json({ error: error.message || '获取用户列表失败' });
   }
 });
 

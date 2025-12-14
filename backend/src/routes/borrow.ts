@@ -22,15 +22,16 @@ router.get('/', authenticateToken, async (req: express.Request, res: express.Res
         operator.username as operator_username,
         operator.name as operator_name
       FROM borrow_records br
-      JOIN items i ON br.item_id = i.id
-      JOIN locations l ON br.location_id = l.id
-      JOIN users borrower ON br.borrower_id = borrower.id
-      JOIN users operator ON br.operator_id = operator.id
+      LEFT JOIN items i ON br.item_id = i.id
+      LEFT JOIN locations l ON br.location_id = l.id
+      LEFT JOIN users borrower ON br.borrower_id = borrower.id
+      LEFT JOIN users operator ON br.operator_id = operator.id
       ORDER BY br.created_at DESC
     `);
-    res.json(records);
+    res.json(records || []);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error('获取借还记录失败:', error);
+    res.status(500).json({ error: error.message || '获取借还记录失败' });
   }
 });
 
