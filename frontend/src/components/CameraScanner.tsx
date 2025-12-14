@@ -36,7 +36,7 @@ export default function CameraScanner({ visible, onClose, onResult, title }: Cam
     return () => {
       if (qrRef.current) {
         qrRef.current.stop().catch(() => {}).finally(() => {
-          qrRef.current?.clear().catch(() => {});
+          qrRef.current?.clear();
           qrRef.current = null;
         });
       }
