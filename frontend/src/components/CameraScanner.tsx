@@ -58,6 +58,7 @@ export default function CameraScanner({ visible, onClose, onResult, title }: Cam
               };
             },
             aspectRatio: 1.0,
+            disableFlip: false,
           },
           (decoded) => {
             onResult(decoded);
@@ -69,12 +70,16 @@ export default function CameraScanner({ visible, onClose, onResult, title }: Cam
         );
       } catch (err: any) {
         console.error('摄像头启动失败:', err);
-        if (err.name === 'NotAllowedError' || err.message?.includes('permission')) {
-          setError('需要摄像头权限，请在浏览器设置中允许访问摄像头');
-        } else if (err.name === 'NotFoundError' || err.message?.includes('camera')) {
-          setError('未找到摄像头设备');
+        if (err.name === 'NotAllowedError' || err.message?.includes('permission') || err.message?.includes('Permission')) {
+          setError('需要摄像头权限，请点击浏览器地址栏的锁图标，允许访问摄像头');
+        } else if (err.name === 'NotFoundError' || err.message?.includes('camera') || err.message?.includes('Camera')) {
+          setError('未找到摄像头设备，请检查设备是否连接');
+        } else if (err.name === 'NotReadableError' || err.message?.includes('readable')) {
+          setError('摄像头被其他应用占用，请关闭其他使用摄像头的应用后重试');
+        } else if (err.message?.includes('HTTPS') || err.message?.includes('secure context')) {
+          setError('摄像头需要在HTTPS环境下使用，请使用HTTPS访问');
         } else {
-          setError(err.message || '摄像头启动失败，请重试');
+          setError(err.message || '摄像头启动失败，请重试。如果问题持续，请检查浏览器权限设置');
         }
       }
     };

@@ -20,12 +20,14 @@ export default function Users() {
   const [form] = Form.useForm();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const isWarehouse = user?.role === 'warehouse';
+  const canAccess = isAdmin || isWarehouse;
 
   useEffect(() => {
-    if (isAdmin) {
+    if (canAccess) {
       loadUsers();
     }
-  }, [isAdmin]);
+  }, [canAccess]);
 
   const loadUsers = async () => {
     setLoading(true);
@@ -88,7 +90,7 @@ export default function Users() {
     },
   ];
 
-  if (!isAdmin) {
+  if (!canAccess) {
     return <div>您没有权限访问此页面</div>;
   }
 
