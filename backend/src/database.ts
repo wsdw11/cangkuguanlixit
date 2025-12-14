@@ -204,9 +204,21 @@ export function initDatabase(): Promise<void> {
         )
       `);
 
-      // 创建默认仓管账户（密码: admin123）
-      // 使用 bcrypt 动态生成密码hash，确保密码正确
+      // 创建默认管理员账户（密码: admin123）
       bcrypt.hash('admin123', 10).then((hashedPassword) => {
+        // 创建 admin 账号
+        db.run(`
+          INSERT OR REPLACE INTO users (username, password, name, role)
+          VALUES ('admin', ?, '系统管理员', 'admin')
+        `, [hashedPassword], (err) => {
+          if (err) {
+            console.error('创建默认管理员失败:', err);
+          } else {
+            console.log('默认管理员账户已创建/更新: admin / admin123');
+          }
+        });
+        
+        // 创建 warehouse 账号
         db.run(`
           INSERT OR REPLACE INTO users (username, password, name, role)
           VALUES ('warehouse', ?, '默认仓管', 'warehouse')
@@ -220,10 +232,21 @@ export function initDatabase(): Promise<void> {
       }).catch((err) => {
         console.error('密码加密失败:', err);
         // 如果加密失败，使用预计算的hash作为后备
+        const fallbackHash = '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
         db.run(`
           INSERT OR REPLACE INTO users (username, password, name, role)
-          VALUES ('warehouse', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '默认仓管', 'warehouse')
-        `, (err) => {
+          VALUES ('admin', ?, '系统管理员', 'admin')
+        `, [fallbackHash], (err) => {
+          if (err) {
+            console.error('创建默认管理员失败:', err);
+          } else {
+            console.log('默认管理员账户已创建/更新（使用后备hash）: admin / admin123');
+          }
+        });
+        db.run(`
+          INSERT OR REPLACE INTO users (username, password, name, role)
+          VALUES ('warehouse', ?, '默认仓管', 'warehouse')
+        `, [fallbackHash], (err) => {
           if (err) {
             console.error('创建默认仓管失败:', err);
           } else {
