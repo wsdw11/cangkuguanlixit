@@ -14,7 +14,7 @@ router.post('/register',
     body('name').notEmpty().withMessage('姓名不能为空'),
     body('role').optional().isIn(['warehouse', 'receiver']).withMessage('角色不合法'),
   ],
-  async (req, res) => {
+  async (req: express.Request, res: express.Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -54,7 +54,7 @@ router.post('/login',
     body('username').notEmpty().withMessage('用户名不能为空'),
     body('password').notEmpty().withMessage('密码不能为空'),
   ],
-  async (req, res) => {
+  async (req: express.Request, res: express.Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
