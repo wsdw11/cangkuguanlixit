@@ -70,7 +70,15 @@ export default function Users() {
       title: '角色',
       dataIndex: 'role',
       key: 'role',
-      render: (role) => (role === 'admin' ? '管理员' : '普通用户'),
+      render: (role) => {
+        const roleMap: Record<string, string> = {
+          admin: '系统管理员',
+          warehouse: '仓库管理员',
+          receiver: '接收员',
+          worker: '工人/领用员',
+        };
+        return roleMap[role] || role;
+      },
     },
     {
       title: '创建时间',
@@ -130,10 +138,12 @@ export default function Users() {
           >
             <Input placeholder="姓名" />
           </Form.Item>
-          <Form.Item name="role" label="角色" initialValue="user">
+          <Form.Item name="role" label="角色" initialValue="worker">
             <Select>
-              <Select.Option value="user">普通用户</Select.Option>
-              <Select.Option value="admin">管理员</Select.Option>
+              <Select.Option value="worker">工人/领用员</Select.Option>
+              <Select.Option value="receiver">接收员</Select.Option>
+              <Select.Option value="warehouse">仓库管理员</Select.Option>
+              <Select.Option value="admin">系统管理员</Select.Option>
             </Select>
           </Form.Item>
         </Form>

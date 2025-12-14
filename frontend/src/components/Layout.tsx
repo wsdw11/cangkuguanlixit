@@ -27,7 +27,8 @@ import { useMemo, useState } from 'react';
 
 const { Header, Sider, Content } = AntLayout;
 
-const menuItems: MenuProps['items'] = [
+// 所有菜单项
+const allMenuItems: MenuProps['items'] = [
   {
     key: '/dashboard',
     icon: <DashboardOutlined />,
@@ -37,6 +38,7 @@ const menuItems: MenuProps['items'] = [
     key: '/items',
     icon: <AppstoreOutlined />,
     label: '物品管理',
+    roles: ['admin', 'warehouse'],
   },
   {
     key: '/stock',
@@ -47,6 +49,7 @@ const menuItems: MenuProps['items'] = [
     key: '/stock-in',
     icon: <InboxOutlined />,
     label: '入库操作',
+    roles: ['admin', 'warehouse'],
   },
   {
     key: '/stock-out',
@@ -57,6 +60,7 @@ const menuItems: MenuProps['items'] = [
     key: '/locations',
     icon: <EnvironmentOutlined />,
     label: '位置管理',
+    roles: ['admin', 'warehouse'],
   },
   {
     key: '/borrow',
@@ -67,11 +71,13 @@ const menuItems: MenuProps['items'] = [
     key: '/flow',
     icon: <FileTextOutlined />,
     label: '流向追踪',
+    roles: ['admin', 'warehouse'],
   },
   {
     key: '/users',
     icon: <UserOutlined />,
     label: '用户管理',
+    roles: ['admin'],
   },
 ];
 
@@ -82,6 +88,31 @@ export default function Layout() {
   const screens = Grid.useBreakpoint();
   const isMobile = useMemo(() => !screens.md, [screens]);
   const [collapsed, setCollapsed] = useState(true);
+
+  // 根据角色过滤菜单
+  const menuItems = useMemo(() => {
+    if (!user) return [];
+    const userRole = user.role;
+    
+    // 工人角色只显示必要功能
+    if (userRole === 'worker' || userRole === 'receiver') {
+      return allMenuItems.filter(item => {
+        if (item.roles) {
+          return item.roles.includes(userRole);
+        }
+        // 如果没有指定 roles，默认所有角色可见
+        return ['/dashboard', '/stock', '/stock-out', '/borrow'].includes(item.key as string);
+      });
+    }
+    
+    // 管理员和仓库管理员看到所有菜单
+    return allMenuItems.filter(item => {
+      if (item.roles) {
+        return item.roles.includes(userRole);
+      }
+      return true;
+    });
+  }, [user]);
 
   const handleMenuClick = ({ key }: { key: string }) => {
     navigate(key);
@@ -176,9 +207,9 @@ export default function Layout() {
         </Header>
         <Content
           style={{
-            margin: isMobile ? '12px' : '24px',
+            margin: isMobile ? '8px' : '24px',
             background: '#fff',
-            padding: isMobile ? 12 : 24,
+            padding: isMobile ? 16 : 24,
             minHeight: 280,
           }}
         >

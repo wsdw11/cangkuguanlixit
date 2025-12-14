@@ -12,7 +12,7 @@ router.post('/register',
     body('username').notEmpty().withMessage('用户名不能为空'),
     body('password').isLength({ min: 6 }).withMessage('密码至少6位'),
     body('name').notEmpty().withMessage('姓名不能为空'),
-    body('role').optional().isIn(['warehouse', 'receiver']).withMessage('角色不合法'),
+    body('role').optional().isIn(['warehouse', 'receiver', 'worker']).withMessage('角色不合法'),
   ],
   async (req: express.Request, res: express.Response) => {
     try {

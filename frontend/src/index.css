@@ -17,3 +17,48 @@ body {
   min-height: 100vh;
 }
 
+/* 移动端优化 */
+@media (max-width: 768px) {
+  /* 增大按钮点击区域 */
+  .ant-btn {
+    min-height: 44px;
+    font-size: 16px;
+    padding: 8px 16px;
+  }
+  
+  /* 增大输入框 */
+  .ant-input,
+  .ant-input-number,
+  .ant-select-selector {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  
+  /* 增大表单间距 */
+  .ant-form-item {
+    margin-bottom: 20px;
+  }
+  
+  /* 优化卡片间距 */
+  .ant-card {
+    margin-bottom: 16px;
+  }
+  
+  /* 优化标题 */
+  h1 {
+    font-size: 20px;
+    margin-bottom: 16px;
+  }
+  
+  /* 优化表格 */
+  .ant-table {
+    font-size: 14px;
+  }
+  
+  /* 优化标签 */
+  .ant-tag {
+    font-size: 14px;
+    padding: 4px 12px;
+  }
+}
+
