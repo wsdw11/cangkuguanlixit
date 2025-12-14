@@ -27,8 +27,15 @@ import { useMemo, useState } from 'react';
 
 const { Header, Sider, Content } = AntLayout;
 
-// 所有菜单项
-const allMenuItems: MenuProps['items'] = [
+// 菜单项配置（包含角色权限信息）
+interface MenuItemConfig {
+  key: string;
+  icon: React.ReactNode;
+  label: string;
+  roles?: string[]; // 允许访问的角色，不指定则所有角色可见
+}
+
+const menuConfigs: MenuItemConfig[] = [
   {
     key: '/dashboard',
     icon: <DashboardOutlined />,
@@ -96,22 +103,34 @@ export default function Layout() {
     
     // 工人角色只显示必要功能
     if (userRole === 'worker' || userRole === 'receiver') {
-      return allMenuItems.filter(item => {
-        if (item.roles) {
-          return item.roles.includes(userRole);
-        }
-        // 如果没有指定 roles，默认所有角色可见
-        return ['/dashboard', '/stock', '/stock-out', '/borrow'].includes(item.key as string);
-      });
+      return menuConfigs
+        .filter(config => {
+          if (config.roles) {
+            return config.roles.includes(userRole);
+          }
+          // 如果没有指定 roles，只显示基础功能
+          return ['/dashboard', '/stock', '/stock-out', '/borrow'].includes(config.key);
+        })
+        .map(config => ({
+          key: config.key,
+          icon: config.icon,
+          label: config.label,
+        }));
     }
     
     // 管理员和仓库管理员看到所有菜单
-    return allMenuItems.filter(item => {
-      if (item.roles) {
-        return item.roles.includes(userRole);
-      }
-      return true;
-    });
+    return menuConfigs
+      .filter(config => {
+        if (config.roles) {
+          return config.roles.includes(userRole);
+        }
+        return true;
+      })
+      .map(config => ({
+        key: config.key,
+        icon: config.icon,
+        label: config.label,
+      }));
   }, [user]);
 
   const handleMenuClick = ({ key }: { key: string }) => {
