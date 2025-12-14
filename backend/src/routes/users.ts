@@ -6,7 +6,7 @@ const router = express.Router();
 const warehouseOnly = requireRole('warehouse');
 
 // 获取所有用户
-router.get('/', authenticateToken, warehouseOnly, async (req: AuthRequest, res) => {
+router.get('/', authenticateToken, warehouseOnly, async (req: AuthRequest, res: express.Response) => {
   try {
     const users = await dbAll(
       'SELECT id, username, name, role, created_at FROM users ORDER BY created_at DESC'

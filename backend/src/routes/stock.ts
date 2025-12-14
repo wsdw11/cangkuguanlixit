@@ -7,7 +7,7 @@ const router = express.Router();
 const warehouseOnly = requireRole('warehouse');
 
 // 获取库存列表
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, async (req: express.Request, res: express.Response) => {
   try {
     const stock = await dbAll(`
       SELECT 
@@ -35,7 +35,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // 获取低库存预警
-router.get('/low-stock', authenticateToken, async (req, res) => {
+router.get('/low-stock', authenticateToken, async (req: express.Request, res: express.Response) => {
   try {
     const lowStock = await dbAll(`
       SELECT 
@@ -72,7 +72,7 @@ router.post('/in',
     body('location_id').isInt().withMessage('位置ID必须为整数'),
     body('quantity').isInt({ min: 1 }).withMessage('数量必须大于0'),
   ],
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: express.Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -167,7 +167,7 @@ router.post('/out',
     body('location_id').isInt().withMessage('位置ID必须为整数'),
     body('quantity').isInt({ min: 1 }).withMessage('数量必须大于0'),
   ],
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: express.Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -262,7 +262,7 @@ router.post('/in/scan',
     body('location_code').notEmpty().withMessage('位置编码不能为空'),
     body('quantity').isInt({ min: 1 }).withMessage('数量必须大于0'),
   ],
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: express.Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -368,7 +368,7 @@ router.post('/out/scan',
     body('location_code').notEmpty().withMessage('位置编码不能为空'),
     body('quantity').isInt({ min: 1 }).withMessage('数量必须大于0'),
   ],
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: express.Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {

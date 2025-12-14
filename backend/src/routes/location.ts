@@ -7,7 +7,7 @@ const router = express.Router();
 const warehouseOnly = requireRole('warehouse');
 
 // 获取所有位置
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, async (req: express.Request, res: express.Response) => {
   try {
     const locations = await dbAll('SELECT * FROM locations ORDER BY created_at DESC');
     res.json(locations);
@@ -17,7 +17,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // 根据编码获取位置（用于扫码）
-router.get('/code/:code', authenticateToken, async (req, res) => {
+router.get('/code/:code', authenticateToken, async (req: express.Request, res: express.Response) => {
   try {
     const location: any = await dbGet('SELECT * FROM locations WHERE code = ?', [req.params.code]);
     if (!location) {
@@ -37,7 +37,7 @@ router.post('/',
     body('code').notEmpty().withMessage('位置编码不能为空'),
     body('name').notEmpty().withMessage('位置名称不能为空'),
   ],
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: express.Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -71,7 +71,7 @@ router.post('/',
 router.put('/:id',
   authenticateToken,
   warehouseOnly,
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: express.Response) => {
     try {
       const { name, area, description } = req.body;
       await dbRun(
@@ -89,7 +89,7 @@ router.put('/:id',
 router.delete('/:id',
   authenticateToken,
   warehouseOnly,
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: express.Response) => {
     try {
       await dbRun('DELETE FROM locations WHERE id = ?', [req.params.id]);
       res.json({ message: '位置删除成功' });

@@ -8,7 +8,7 @@ interface CountRow {
   count: number;
 }
 
-router.get('/summary', authenticateToken, async (req, res) => {
+router.get('/summary', authenticateToken, async (req: express.Request, res: express.Response) => {
   try {
     const [
       totalItemsRow,

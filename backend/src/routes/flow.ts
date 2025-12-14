@@ -5,7 +5,7 @@ import { dbAll, dbGet } from '../database';
 const router = express.Router();
 
 // 获取物品流向记录
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, async (req: express.Request, res: express.Response) => {
   try {
     const { item_id, location_id, flow_type, start_date, end_date } = req.query;
 
@@ -61,7 +61,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // 获取特定物品的流向
-router.get('/item/:item_id', authenticateToken, async (req, res) => {
+router.get('/item/:item_id', authenticateToken, async (req: express.Request, res: express.Response) => {
   try {
     const flows = await dbAll(`
       SELECT 

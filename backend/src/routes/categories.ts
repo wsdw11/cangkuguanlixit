@@ -7,7 +7,7 @@ const router = express.Router();
 const warehouseOnly = requireRole('warehouse');
 
 // 获取全部分类（平铺返回，前端可组装树）
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, async (req: express.Request, res: express.Response) => {
   try {
     const categories = await dbAll(`
       SELECT id, name, parent_id, description, created_at
@@ -27,7 +27,7 @@ router.post('/',
   [
     body('name').notEmpty().withMessage('分类名称不能为空'),
   ],
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: express.Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -61,7 +61,7 @@ router.put('/:id',
   [
     body('name').notEmpty().withMessage('分类名称不能为空'),
   ],
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: express.Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -97,7 +97,7 @@ router.put('/:id',
 router.delete('/:id',
   authenticateToken,
   warehouseOnly,
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: express.Response) => {
     try {
       const { id } = req.params;
       // 检查是否有子分类或物品引用

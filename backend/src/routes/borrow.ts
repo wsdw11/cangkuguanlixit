@@ -7,7 +7,7 @@ const router = express.Router();
 const warehouseOrReceiver = requireRole(['warehouse', 'receiver']);
 
 // 获取所有借还记录
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, async (req: express.Request, res: express.Response) => {
   try {
     const records = await dbAll(`
       SELECT 
@@ -44,7 +44,7 @@ router.post('/borrow',
     body('quantity').isInt({ min: 1 }).withMessage('数量必须大于0'),
     body('borrower_id').isInt().withMessage('借用人ID必须为整数'),
   ],
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: express.Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -109,7 +109,7 @@ router.post('/return',
   [
     body('record_id').isInt().withMessage('借还记录ID必须为整数'),
   ],
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: express.Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -204,7 +204,7 @@ router.post('/borrow/scan',
     body('quantity').isInt({ min: 1 }).withMessage('数量必须大于0'),
     body('borrower_id').isInt().withMessage('借用人ID必须为整数'),
   ],
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: express.Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {

@@ -23,7 +23,7 @@ const upload = multer({
 });
 
 // 获取所有物品
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, async (req: express.Request, res: express.Response) => {
   try {
     const items = await dbAll('SELECT * FROM items ORDER BY created_at DESC');
     res.json(items);
@@ -33,7 +33,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // 根据编码获取物品（用于扫码）
-router.get('/code/:code', authenticateToken, async (req, res) => {
+router.get('/code/:code', authenticateToken, async (req: express.Request, res: express.Response) => {
   try {
     const item: any = await dbGet('SELECT * FROM items WHERE code = ?', [req.params.code]);
     if (!item) {
@@ -53,7 +53,7 @@ router.post('/',
     body('code').notEmpty().withMessage('物品编码不能为空'),
     body('name').notEmpty().withMessage('物品名称不能为空'),
   ],
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: express.Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -113,7 +113,7 @@ router.post('/',
 router.put('/:id',
   authenticateToken,
   warehouseOnly,
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: express.Response) => {
     try {
       const {
         name,
@@ -156,7 +156,7 @@ router.put('/:id',
 router.delete('/:id',
   authenticateToken,
   warehouseOnly,
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: express.Response) => {
     try {
       await dbRun('DELETE FROM items WHERE id = ?', [req.params.id]);
       res.json({ message: '物品删除成功' });
@@ -174,7 +174,7 @@ router.post(
   authenticateToken,
   warehouseOnly,
   upload.single('file'),
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: express.Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: '未收到文件' });
@@ -198,7 +198,7 @@ router.post(
         if (!parts.length) return null;
         let parentId: number | null = null;
         for (const name of parts) {
-          const existing = await dbGet<{ id: number }>(
+          const existing: { id: number } | undefined = await dbGet<{ id: number }>(
             'SELECT id FROM categories WHERE name = ? AND IFNULL(parent_id, 0) = IFNULL(?, 0)',
             [name, parentId ?? 0]
           );
